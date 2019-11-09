@@ -6,6 +6,10 @@ public class PianoKey : MonoBehaviour
 {
 	public List<AudioSource> AudioSources { get; set; }
 	public AudioSource CurrentAudioSource { get; set; }
+	public PianoKeyController PianoKeyController { get; set; }
+
+	public bool Sustain { get; set; }
+	public float SustainSeconds { get; set; }
 
 	private bool _play = false;
 	private bool _played = false;
@@ -13,6 +17,7 @@ public class PianoKey : MonoBehaviour
 	private float _length;
 	private float _speed;
 	private float _timer;
+	private float _keyAngle = 360f;
 
 	private Vector3 _position;
 	private Vector3 _rotation;
@@ -25,7 +30,7 @@ public class PianoKey : MonoBehaviour
 
 	private List<AudioSource> _toFade = new List<AudioSource>();
 
-	private bool _pendingFixedUpdate;
+	private bool _depression;
 	private float _startAngle;
 
 	// Debug
@@ -55,22 +60,38 @@ public class PianoKey : MonoBehaviour
 			KeyPlayMechanics();
 		}
 
-		if (transform.eulerAngles.x > 350 && transform.eulerAngles.x < 359.5f && !_played)
+		if (PianoKeyController.KeyMode == KeyMode.Physical)
 		{
-			if (CurrentAudioSource.clip)
-				StartCoroutine(CalculateVolume());
+			if (transform.eulerAngles.x > 350 && transform.eulerAngles.x < 359.5f && !_played)
+			{
+				if (CurrentAudioSource.clip)
+					StartCoroutine(PlayPressedAudio());
 
-			_played = true;
+				_played = true;
+
+				if (_toFade.Count > 0)
+				{
+					FadeList();
+				}
+			}
+			else if (transform.eulerAngles.x > 359.9 || transform.eulerAngles.x < 350)
+			{
+				FadeAll();
+				
+				_played = false;
+			}
 		}
-		else if (transform.eulerAngles.x > 359.9 || transform.eulerAngles.x < 350)
+		else if (PianoKeyController.KeyMode == KeyMode.ForShow)
 		{
-			FadeAll();
+			if (_timer >= 1)
+			{
+				FadeAll();
+			}
 			
-			_played = false;
-		}
-		else if (_toFade.Count > 0)
-		{
-			FadeList();
+			if (_toFade.Count > 0)
+			{
+				FadeList();
+			}
 		}
 
 		// Debug
@@ -104,7 +125,28 @@ public class PianoKey : MonoBehaviour
 			_constantForce.enabled = false;
 			
 			if (transform.eulerAngles.x < 1 || transform.eulerAngles.x > 359.5f)
+			{
 				_rigidbody.AddTorque(-Vector3.right * _velocity / 1024f);
+			}
+
+			if (transform.eulerAngles.x > 1)
+			{
+				if (PianoKeyController.KeyPressAngleDecay && _depression && transform.eulerAngles.x > PianoKeyController.PressAngleThreshold 
+					|| !PianoKeyController.KeyPressAngleDecay && transform.eulerAngles.x < _keyAngle)
+				{
+					_keyAngle = transform.eulerAngles.x;
+				}
+				else
+				{
+					if (transform.eulerAngles.x <= PianoKeyController.PressAngleThreshold)
+						_depression = false;
+					
+					transform.rotation = Quaternion.Euler(_keyAngle, transform.eulerAngles.y, transform.eulerAngles.z);
+
+					if (PianoKeyController.KeyPressAngleDecay && !_depression && transform.eulerAngles.x < 359.5f)
+						_keyAngle += Time.deltaTime * PianoKeyController.PressAngleDecay;
+				}
+			}
 
 			_timer += Time.deltaTime / _length * _speed;
 		}
@@ -125,7 +167,7 @@ public class PianoKey : MonoBehaviour
 		{
 			if (audioSource.isPlaying)
 			{
-				audioSource.volume -= Time.deltaTime / 2;
+				audioSource.volume -= Time.deltaTime / (PianoKeyController.SustainPedalPressed ? PianoKeyController.SustainSeconds : 1f);
 
 				if (audioSource.volume <= 0)
 					audioSource.Stop();
@@ -139,7 +181,7 @@ public class PianoKey : MonoBehaviour
 		{
 			if (_toFade[i].isPlaying)
 			{
-				_toFade[i].volume -= Time.deltaTime;
+				_toFade[i].volume -= Time.deltaTime * 2;
 
 				if (_toFade[i].volume <= 0)
 				{
@@ -154,19 +196,30 @@ public class PianoKey : MonoBehaviour
 
 	public void Play(float velocity = 10, float length = 1, float speed = 1)
 	{
+		_keyAngle = 360f;
+		
 		if (_play)
-			_rigidbody.AddTorque(Vector3.right * 127);
+		{
+			if (PianoKeyController.RepeatedKeyTeleport)
+				transform.rotation = Quaternion.Euler(_keyAngle, transform.eulerAngles.y, transform.eulerAngles.z);
+			else
+				_rigidbody.AddTorque(Vector3.right * 127);
+		}
 		
 		_velocity = velocity;
 		_length = length;
 		_speed = speed;
 		_timer = 0;
 		_play = true;
+		_depression = true;
+
+		if (PianoKeyController.KeyMode == KeyMode.ForShow)
+			PlayVirtualAudio();
 	}
 
-	IEnumerator CalculateVolume()
+	IEnumerator PlayPressedAudio()
 	{
-		if (CurrentAudioSource.isPlaying)
+		if (!PianoKeyController.NoMultiAudioSource && CurrentAudioSource.isPlaying)
 		{
 			bool foundReplacement = false;
 			int index = AudioSources.IndexOf(CurrentAudioSource);
@@ -195,11 +248,45 @@ public class PianoKey : MonoBehaviour
 		_startAngle = transform.eulerAngles.x;
 
 		yield return new WaitForFixedUpdate();
+		yield return new WaitForFixedUpdate();
 
 		if (Mathf.Abs(_startAngle - transform.eulerAngles.x) > 0)
 		{
 			CurrentAudioSource.volume = Mathf.Lerp(0, 1, Mathf.Clamp((Mathf.Abs(_startAngle - transform.eulerAngles.x) / 2f), 0, 1));
 		}
+
+		CurrentAudioSource.Play();
+	}
+
+	void PlayVirtualAudio()
+	{
+		if (!PianoKeyController.NoMultiAudioSource && CurrentAudioSource.isPlaying)
+		{
+			bool foundReplacement = false;
+			int index = AudioSources.IndexOf(CurrentAudioSource);
+
+			for (int i = 0; i < AudioSources.Count; i++)
+			{
+				if (i != index && (!AudioSources[i].isPlaying || AudioSources[i].volume <= 0))
+				{
+					foundReplacement = true;
+					CurrentAudioSource = AudioSources[i];
+					_toFade.Remove(AudioSources[i]);
+					break;
+				}
+			}
+			
+			if (!foundReplacement)
+			{
+				AudioSource newAudioSource = CloneAudioSource();
+				AudioSources.Add(newAudioSource);
+				CurrentAudioSource = newAudioSource;
+			}
+			
+			_toFade.Add(AudioSources[index]);
+		}
+
+		CurrentAudioSource.volume = _velocity / 127f;
 
 		CurrentAudioSource.Play();
 	}
