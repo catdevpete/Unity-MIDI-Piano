@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Events;
 
 public class MidiPlayer : MonoBehaviour
 {
@@ -7,9 +8,12 @@ public class MidiPlayer : MonoBehaviour
 	public RepeatType RepeatType;
 
 	public UnityEngine.Object[] MIDIFiles;
+
+	[Header("Ensure Playlist is filled for builds")]
 	public string[] Playlist;
 
 	public MidiNote[] MidiNotes { get; set; }
+	public UnityEvent OnPlayTrack { get; set; }
 
 	MidiFileInspector _midi;
 
@@ -17,12 +21,15 @@ public class MidiPlayer : MonoBehaviour
 	string[] _keyIndex;
 	int _noteIndex = 0;
 	int _midiIndex;
-	private float _timer = 0;
+	public float _timer = 0;
 
 	void Start ()
 	{
+		OnPlayTrack = new UnityEvent();
+		OnPlayTrack.AddListener(delegate{FindObjectOfType<MusicText>().StartSequence();});
+		
 		_midiIndex = 0;
-		PlayMIDI();
+		PlayCurrentMIDI();
 	}
 
 	void Update ()
@@ -36,7 +43,7 @@ public class MidiPlayer : MonoBehaviour
 
 			if (MidiNotes[_noteIndex].StartTime < _timer)
 			{
-				if (_timer - 50 < MidiNotes[_noteIndex].StartTime && PianoKeyDetector.PianoNotes.ContainsKey(MidiNotes[_noteIndex].Note))
+				if (PianoKeyDetector.PianoNotes.ContainsKey(MidiNotes[_noteIndex].Note))
 					PianoKeyDetector.PianoNotes[MidiNotes[_noteIndex].Note].Play(MidiNotes[_noteIndex].Velocity, 
 																				MidiNotes[_noteIndex].Length, 
 																				PianoKeyDetector.MidiPlayer.Speed);
@@ -68,18 +75,25 @@ public class MidiPlayer : MonoBehaviour
 				_midiIndex++;
 		}
 
-		PlayMIDI();
+		PlayCurrentMIDI();
 	}
 
-	void PlayMIDI()
+	void PlayCurrentMIDI()
 	{
 		_timer = 0;
 
+#if UNITY_EDITOR
+		_path = string.Format("{0}/MIDI/{1}.mid", Application.streamingAssetsPath, MIDIFiles[_midiIndex].name);
+#else
 		_path = string.Format("{0}/MIDI/{1}.mid", Application.streamingAssetsPath, Playlist[_midiIndex]);
+#endif
 		_midi = new MidiFileInspector(_path);
 		MidiNotes = _midi.GetNotes();
 		_noteIndex = 0;
+
+		OnPlayTrack.Invoke();
 	}
+
 
 	[ContextMenu("MIDI array to playlist")]
 	public void MIDIToPlaylist()
