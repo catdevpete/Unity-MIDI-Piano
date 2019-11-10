@@ -1,7 +1,7 @@
 # Unity-MIDI-Piano
 
 ![Piano Preview](https://raw.githubusercontent.com/catdevpete/Unity-MIDI-Piano/master/Piano-preview.png)
-https://www.youtube.com/embed/5pC22XbFnnA
+https://youtu.be/5pC22XbFnnA
 
 This is a demonstration of the Piano project that I've been working on. It is now ready (for the most part) for public use by developers for their projects.
 
@@ -11,12 +11,13 @@ Although it is far from perfect (part from my own technical limitations, part fr
 
 Provided under MIT License.
 
+
 Credits:
-Fantasie Impromptu by Frédéric Chopin
-Gymnopédie No. 1 by Erik Satie
-The Entertainer by Scott Joplin
-NAudio library by Markheath (https://github.com/naudio/NAudio)
-Font by Sebastian Kosch (https://github.com/skosch/Crimson)
-Piano Key samples by Beskhu on Freesound.org (http://www.freesound.org/people/beskh...)
-Project & Piano Model by me (Peter Liang a.k.a. CatDevPete)
-Powered by Unity Engine (https://unity.com/)
+- Fantasie Impromptu by Frédéric Chopin
+- Gymnopédie No. 1 by Erik Satie
+- The Entertainer by Scott Joplin
+- NAudio library by Markheath (https://github.com/naudio/NAudio)
+- Font by Sebastian Kosch (https://github.com/skosch/Crimson)
+- Piano Key samples by Beskhu on Freesound.org (http://www.freesound.org/people/beskh...)
+- Project & Piano Model by me (Peter Liang a.k.a. CatDevPete)
+- Powered by Unity Engine (https://unity.com/)
