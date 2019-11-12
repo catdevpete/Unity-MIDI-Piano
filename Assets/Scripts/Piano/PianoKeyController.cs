@@ -44,6 +44,28 @@ public class PianoKeyController : MonoBehaviour
 		}
 	}
 
+	public bool ShowMIDIChannelColours		
+	{
+		get
+		{
+			if (MidiPlayer)
+				return MidiPlayer.ShowMIDIChannelColours;
+			else
+				return false;
+		}
+	}
+
+	public Color[] MIDIChannelColours					
+	{
+		get
+		{
+			if (MidiPlayer)
+				return MidiPlayer.MIDIChannelColours;
+			else
+				return null;
+		}
+	}
+
 	[Header("Note: Leave regex blank to sort alphabetically")]
     public string Regex;
 
@@ -88,8 +110,6 @@ public class PianoKeyController : MonoBehaviour
 
 	void Update()
 	{
-		//SustainPedal.localEulerAngles += Vector3.left *  (SustainPressed ? 1 : -1);
-
 		_sustainPedalLerp -= Time.deltaTime * (SustainPedalPressed ? 1 : -1) * 3.5f;
 		_sustainPedalLerp = Mathf.Clamp01(_sustainPedalLerp);
 

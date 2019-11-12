@@ -12,11 +12,14 @@ public class MidiPlayer : MonoBehaviour
 	public RepeatType RepeatType;
 
 	public KeyMode KeyMode;
+	public bool ShowMIDIChannelColours;
+	public Color[] MIDIChannelColours;
 
 	[Header("Ensure Song Name is filled for builds")]
 	public MidiSong[] MIDISongs;
 
-	public MidiNote[] MidiNotes { get; set; }
+	[HideInInspector]
+	public MidiNote[] MidiNotes;
 	public UnityEvent OnPlayTrack { get; set; }
 
 	MidiFileInspector _midi;
@@ -26,8 +29,8 @@ public class MidiPlayer : MonoBehaviour
 	int _noteIndex = 0;
 	int _midiIndex;
 	float _timer = 0;
-
-
+	[SerializeField, HideInInspector]
+	bool _preset = false;
 
 	void Start ()
 	{
@@ -35,7 +38,20 @@ public class MidiPlayer : MonoBehaviour
 		OnPlayTrack.AddListener(delegate{FindObjectOfType<MusicText>().StartSequence(MIDISongs[_midiIndex].Details);});
 		
 		_midiIndex = 0;
-		PlayCurrentMIDI();
+
+		if (!_preset)
+			PlayCurrentMIDI();
+		else
+		{
+#if UNITY_EDITOR
+			_path = string.Format("{0}/MIDI/{1}.mid", Application.streamingAssetsPath, MIDISongs[0].MIDIFile.name);
+#else
+			_path = string.Format("{0}/MIDI/{1}.mid", Application.streamingAssetsPath, MIDISongs[0].SongFileName);
+#endif
+			_midi = new MidiFileInspector(_path);
+			
+			OnPlayTrack.Invoke();
+		}
 	}
 
 	void Update ()
@@ -47,12 +63,22 @@ public class MidiPlayer : MonoBehaviour
 		{
 			_timer += Time.deltaTime * GlobalSpeed * (float)MidiNotes[_noteIndex].Tempo;
 
-			if (MidiNotes[_noteIndex].StartTime < _timer)
+			while (_noteIndex < MidiNotes.Length && MidiNotes[_noteIndex].StartTime < _timer)
 			{
 				if (PianoKeyDetector.PianoNotes.ContainsKey(MidiNotes[_noteIndex].Note))
-					PianoKeyDetector.PianoNotes[MidiNotes[_noteIndex].Note].Play(MidiNotes[_noteIndex].Velocity, 
+				{
+					if (ShowMIDIChannelColours)
+					{
+						PianoKeyDetector.PianoNotes[MidiNotes[_noteIndex].Note].Play(MIDIChannelColours[MidiNotes[_noteIndex].Channel],
+																				MidiNotes[_noteIndex].Velocity, 
 																				MidiNotes[_noteIndex].Length, 
 																				PianoKeyDetector.MidiPlayer.GlobalSpeed * MIDISongs[_midiIndex].Speed);
+					}
+					else
+						PianoKeyDetector.PianoNotes[MidiNotes[_noteIndex].Note].Play(MidiNotes[_noteIndex].Velocity, 
+																				MidiNotes[_noteIndex].Length, 
+																				PianoKeyDetector.MidiPlayer.GlobalSpeed * MIDISongs[_midiIndex].Speed);
+				}
 
 				_noteIndex++;
 			}
@@ -98,6 +124,27 @@ public class MidiPlayer : MonoBehaviour
 		_noteIndex = 0;
 
 		OnPlayTrack.Invoke();
+	}
+
+	[ContextMenu("Preset MIDI")]
+	void PresetFirstMIDI()
+	{
+#if UNITY_EDITOR
+		_path = string.Format("{0}/MIDI/{1}.mid", Application.streamingAssetsPath, MIDISongs[0].MIDIFile.name);
+#else
+		_path = string.Format("{0}/MIDI/{1}.mid", Application.streamingAssetsPath, MIDISongs[0].SongFileName);
+#endif
+		_midi = new MidiFileInspector(_path);
+		MidiNotes = _midi.GetNotes();
+		
+		_preset = true;
+	}
+
+	[ContextMenu("Clear MIDI")]
+	void ClearPresetMIDI()
+	{
+		MidiNotes = new MidiNote[0];
+		_preset = false;
 	}
 
 #if UNITY_EDITOR

@@ -10,13 +10,16 @@ public class PianoKey : MonoBehaviour
 
 	public bool Sustain { get; set; }
 	public float SustainSeconds { get; set; }
+	public Material Material { get; set; }
 
 	private bool _play = false;
 	private bool _played = false;
 	private float _velocity;
 	private float _length;
 	private float _speed;
-	private float _timer;
+	private Color _colour;
+	private Color _originalColour;
+	private float _Timer;
 	private float _keyAngle = 360f;
 
 	private Vector3 _position;
@@ -48,6 +51,9 @@ public class PianoKey : MonoBehaviour
 
 		_position = transform.position;
 		_rotation = transform.eulerAngles;
+
+		Material = GetComponent<MeshRenderer>().material;
+		_originalColour = Material.color;
 	}
 
 	// Update is called once per frame
@@ -83,7 +89,7 @@ public class PianoKey : MonoBehaviour
 		}
 		else if (PianoKeyController.KeyMode == KeyMode.ForShow)
 		{
-			if (_timer >= 1)
+			if (_Timer >= 1)
 			{
 				FadeAll();
 			}
@@ -119,7 +125,7 @@ public class PianoKey : MonoBehaviour
 
 	void KeyPlayMechanics()
 	{
-		if (_timer < 1)
+		if (_Timer < 1)
 		{
 			_springJoint.useSpring = false;
 			_constantForce.enabled = false;
@@ -148,10 +154,14 @@ public class PianoKey : MonoBehaviour
 				}
 			}
 
-			_timer += Time.deltaTime / _length * _speed;
+			if (PianoKeyController.ShowMIDIChannelColours)
+				Material.color = Color.Lerp(_colour, _originalColour, _Timer);
+			
+			_Timer += Time.deltaTime / _length * _speed;
 		}
 		else
 		{
+			Material.color = _originalColour;
 			_constantForce.enabled = true;
 			_springJoint.useSpring = true;
 			_play = false;
@@ -209,12 +219,22 @@ public class PianoKey : MonoBehaviour
 		_velocity = velocity;
 		_length = length;
 		_speed = speed;
-		_timer = 0;
+		_Timer = 0;
 		_play = true;
 		_depression = true;
 
 		if (PianoKeyController.KeyMode == KeyMode.ForShow)
 			PlayVirtualAudio();
+	}
+
+	public void Play(Color colour, float velocity = 10, float length = 1, float speed = 1)
+	{
+		if (PianoKeyController.ShowMIDIChannelColours)
+		{
+			_colour = colour;
+		}
+		
+		this.Play(velocity, length, speed);
 	}
 
 	IEnumerator PlayPressedAudio()

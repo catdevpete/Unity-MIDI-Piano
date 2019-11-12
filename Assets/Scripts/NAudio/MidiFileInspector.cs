@@ -58,7 +58,8 @@ public class MidiFileInspector
 						MidiNote noteOn = new MidiNote();
 
 						noteOn.Note = t_note.NoteName;
-						noteOn.Channel = t_note.Channel;
+						//noteOn.Channel = t_note.Channel;
+						noteOn.Channel = n;
 						noteOn.Velocity = t_note.Velocity;
 						noteOn.StartTime = t_note.AbsoluteTime;
 
@@ -129,6 +130,7 @@ public class MidiFileInspector
 		var realtime = 0.0;
 		var reldelta = 0;
 		_tempoEvents = new List<TempoEvent>();
+
 		foreach (var ev in MidiFile.Events[0])
 		{
 			reldelta += ev.DeltaTime;
