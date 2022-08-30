@@ -57,3 +57,15 @@ The following packages were updated:
   com.unity.timeline from version 1.1.0 to 1.2.6
 The following packages were removed:
   com.unity.package-manager-ui@2.2.0
+
+=== Fri Aug 20 22:43:40 2021
+
+Packages were changed.
+Update Mode: updateDependencies
+
+The following packages were added:
+  com.unity.ide.visualstudio@2.0.9
+The following packages were updated:
+  com.unity.cinemachine from version 2.3.4 to 2.5.0
+  com.unity.postprocessing from version 2.2.2 to 2.3.0
+  com.unity.timeline from version 1.2.6 to 1.4.8
