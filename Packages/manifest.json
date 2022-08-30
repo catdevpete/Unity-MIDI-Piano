@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.ultraleap.tracking.preview": "6.0.0",
     "com.unity.cinemachine": "2.6.3",
     "com.unity.ide.vscode": "1.2.3",
     "com.unity.postprocessing": "3.0.1",
@@ -37,5 +38,14 @@
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
     "com.unity.modules.xr": "1.0.0"
-  }
+  },
+  "scopedRegistries": [
+    {
+      "name": "Ultraleap",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.ultraleap"
+      ]
+    }
+  ]
 }
