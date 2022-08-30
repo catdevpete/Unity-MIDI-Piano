@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class FixedPosition : MonoBehaviour
 {
-	private Rigidbody rigidbody;
+	private new Rigidbody rigidbody;
 	private Vector3 targetPosition;
 
 	// Start is called before the first frame update
@@ -18,6 +18,5 @@ public class FixedPosition : MonoBehaviour
 	void FixedUpdate()
 	{
 		rigidbody.position = targetPosition;
-		rigidbody.rotation = Quaternion.AngleAxis();
 	}
 }
